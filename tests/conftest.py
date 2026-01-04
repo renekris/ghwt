@@ -84,11 +84,18 @@ def template_renderer(template_path: Path) -> TemplateRenderer:
 
 @pytest.fixture
 def worktree_creator(
-    issue_fetcher: GitHubIssueFetcher, template_renderer: TemplateRenderer, temp_worktree_root: Path
+    issue_fetcher: GitHubIssueFetcher,
+    template_renderer: TemplateRenderer,
+    temp_worktree_root: Path,
 ) -> WorktreeCreator:
     """Worktree creator instance with test configuration."""
+    from config import WorktreeSettings
+
+    settings = WorktreeSettings(worktree_root=temp_worktree_root)
     return WorktreeCreator(
-        issue_fetcher=issue_fetcher, template_renderer=template_renderer, worktree_root=str(temp_worktree_root)
+        issue_fetcher=issue_fetcher,
+        template_renderer=template_renderer,
+        settings=settings,
     )
 
 
@@ -264,6 +271,7 @@ def mock_subprocess_command_aware():
     mock_gh_pr_result.returncode = 0
 
     call_history = []
+    shuvcode_calls = []
 
     class WorktreeRootHolder:
         def __init__(self):
@@ -278,13 +286,22 @@ def mock_subprocess_command_aware():
         cmd = args[0] if args else []
         call_history.append(cmd)
 
+        if "shuvcode" in cmd:
+            shuvcode_calls.append(cmd)
+            mock_result = MagicMock()
+            mock_result.stdout = ""
+            mock_result.returncode = 0
+            return mock_result
+
         if "gh" in cmd:
             if "pr" in cmd:
                 return mock_gh_pr_result
             return mock_gh_issue_result
         elif "workmux" in cmd:
             if "list" in cmd:
-                branch_name_to_match = kwargs.get("branch_to_create", "issue-42-test-issue")
+                branch_name_to_match = kwargs.get(
+                    "branch_to_create", "issue-42-test-issue"
+                )
                 list_output = f"{branch_name_to_match} /path/to/existing"
                 mock_result = MagicMock()
                 mock_result.stdout = list_output
@@ -299,7 +316,9 @@ def mock_subprocess_command_aware():
                 branch_name = cmd[2] if len(cmd) > 2 else "test-branch"
                 if worktree_root_holder.path is None:
                     mock_result = MagicMock()
-                    mock_result.stdout = "Error: Worktree root not set. Call set_worktree_root() first."
+                    mock_result.stdout = (
+                        "Error: Worktree root not set. Call set_worktree_root() first."
+                    )
                     mock_result.returncode = 1
                     return mock_result
 
@@ -310,16 +329,12 @@ def mock_subprocess_command_aware():
                 mock_result.stdout = f"Created worktree at {worktree_path}"
                 mock_result.returncode = 0
                 return mock_result
-        elif "shuvcode" in cmd:
-            mock_result = MagicMock()
-            mock_result.stdout = ""
-            mock_result.returncode = 0
-            return mock_result
         else:
             raise ValueError(f"Unexpected command: {cmd}")
 
     with patch("subprocess.run", side_effect=side_effect) as mock_run:
         mock_run.worktree_root_holder = worktree_root_holder
         mock_run.call_history = call_history
+        mock_run.shuvcode_calls = shuvcode_calls
         mock_run.set_worktree_root = worktree_root_holder.set_path
         yield mock_run
