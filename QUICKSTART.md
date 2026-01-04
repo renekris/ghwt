@@ -101,12 +101,12 @@ ln -s ../../.env . && ln -s ../../data . && ln -s ../../logs .
 
 Generated branch names follow this pattern:
 
-- **Issues**: `issue-{number}-{sanitized-title}`
-  - Example: `issue-42-fix-database-connection-error`
-- **PRs**: `pr-{number}-{sanitized-title}`
+- **Issues**: `issue-{number}-{sanitized-title}` (3 words maximum)
+  - Example: `issue-42-fix-database-connection`
+- **PRs**: `pr-{number}-{sanitized-title}` (3 words maximum)
   - Example: `pr-123-add-user-authentication`
 
-Special characters in titles are replaced with hyphens.
+Special characters in titles are replaced with hyphens. Titles are limited to first 3 words.
 
 ## Branch Conflicts
 
