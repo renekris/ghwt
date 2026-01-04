@@ -12,10 +12,14 @@ from github_fetcher import GitHubIssueFetcher
 from models import IssueData, PRData
 from template_renderer import TemplateRenderer
 
-ERROR_WORKMUX_NOT_INSTALLED = "workmux is not installed. Install from https://github.com/yourusername/workmux"
+ERROR_WORKMUX_NOT_INSTALLED = (
+    "workmux is not installed. Install from https://github.com/yourusername/workmux"
+)
 ERROR_FAILED_TO_CREATE_WORKTREE = "Failed to create worktree: {error}"
 ERROR_FAILED_TO_WRITE_TASK_FILE = "Failed to write WT-TASK.md to {path}"
-ERROR_USER_CANCELLED_BRANCH_CONFLICT = "User cancelled. Branch '{branch}' already exists."
+ERROR_USER_CANCELLED_BRANCH_CONFLICT = (
+    "User cancelled. Branch '{branch}' already exists."
+)
 
 # Regex patterns
 GITHUB_URL_PATTERN = r"github\.com/([^/]+)/([^/]+)/(issues|pull)/(\d+)"
@@ -41,7 +45,9 @@ class WorktreeCreator:
             settings: Configuration settings
             dry_run: If True, skip workmux and only generate WT-TASK.md
         """
-        self.logger: structlog.typing.FilteringBoundLogger = structlog.get_logger(__name__)
+        self.logger: structlog.typing.FilteringBoundLogger = structlog.get_logger(
+            __name__
+        )
         self.issue_fetcher: GitHubIssueFetcher = issue_fetcher
         self.template_renderer: TemplateRenderer = template_renderer
         self.settings: WorktreeSettings = settings
@@ -75,7 +81,9 @@ class WorktreeCreator:
         )
 
         # Parse URL to extract owner, repo, number, type
-        item_type, owner, repo, number = self._parse_github_url(url_or_number, item_type)
+        item_type, owner, repo, number = self._parse_github_url(
+            url_or_number, item_type
+        )
 
         self.logger.debug(
             "Parsed GitHub URL",
@@ -150,9 +158,9 @@ class WorktreeCreator:
                 parsed = urlparse(remote_url)
 
                 if parsed.scheme in ("https", "http", "ssh"):
-                    repo_path = parsed.path.lstrip("/").rstrip(".git")
+                    repo_path = parsed.path.removeprefix("/").removesuffix(".git")
                 else:
-                    repo_path = remote_url.split(":")[-1].rstrip(".git")
+                    repo_path = remote_url.split(":")[-1].removesuffix(".git")
 
                 if "/" not in repo_path:
                     continue
@@ -326,11 +334,17 @@ class WorktreeCreator:
 
                 # Branch exists - prompt for removal
                 response = (
-                    input(f"Branch '{branch_name}' already exists. Remove existing worktree? (y/n): ").strip().lower()
+                    input(
+                        f"Branch '{branch_name}' already exists. Remove existing worktree? (y/n): "
+                    )
+                    .strip()
+                    .lower()
                 )
 
                 if response == "y":
-                    self.logger.info("Removing existing worktree", branch_name=branch_name)
+                    self.logger.info(
+                        "Removing existing worktree", branch_name=branch_name
+                    )
                     # Remove existing worktree
                     _ = subprocess.run(
                         ["workmux", "remove", branch_name],
@@ -339,12 +353,22 @@ class WorktreeCreator:
                         text=True,
                         timeout=self.settings.workmux_timeout,
                     )
-                    self.logger.debug("Existing worktree removed successfully", branch_name=branch_name)
+                    self.logger.debug(
+                        "Existing worktree removed successfully",
+                        branch_name=branch_name,
+                    )
                 else:
-                    self.logger.info("User cancelled worktree creation due to branch conflict", branch_name=branch_name)
-                    raise RuntimeError(ERROR_USER_CANCELLED_BRANCH_CONFLICT.format(branch=branch_name))
+                    self.logger.info(
+                        "User cancelled worktree creation due to branch conflict",
+                        branch_name=branch_name,
+                    )
+                    raise RuntimeError(
+                        ERROR_USER_CANCELLED_BRANCH_CONFLICT.format(branch=branch_name)
+                    )
             else:
-                self.logger.debug("No branch conflict detected", branch_name=branch_name)
+                self.logger.debug(
+                    "No branch conflict detected", branch_name=branch_name
+                )
 
         except subprocess.CalledProcessError as e:
             self.logger.warning(
@@ -371,7 +395,10 @@ class WorktreeCreator:
             RuntimeError: If worktree creation fails (not in dry-run mode)
         """
         if self._dry_run:
-            self.logger.debug("Dry-run mode: creating temporary directory for WT-TASK.md", branch_name=branch_name)
+            self.logger.debug(
+                "Dry-run mode: creating temporary directory for WT-TASK.md",
+                branch_name=branch_name,
+            )
             # Dry-run mode: create temporary directory for WT-TASK.md only
             worktree_path = Path(self._worktree_root) / branch_name
             worktree_path.mkdir(parents=True, exist_ok=True)
@@ -396,7 +423,9 @@ class WorktreeCreator:
             match = re.search(WORKMUX_CREATED_PATTERN, result.stdout)
             if match:
                 worktree_path = Path(match.group(1))
-                self.logger.debug("Extracted worktree path from output", path=str(worktree_path))
+                self.logger.debug(
+                    "Extracted worktree path from output", path=str(worktree_path)
+                )
                 return worktree_path
 
             # Fallback: construct path manually using configured worktree root
@@ -412,8 +441,14 @@ class WorktreeCreator:
                 error_msg = e.stderr
             else:
                 error_msg = e.stderr.decode("utf-8", errors="replace")
-            self.logger.error("Failed to create worktree", branch_name=branch_name, error=error_msg[:500])
-            raise RuntimeError(ERROR_FAILED_TO_CREATE_WORKTREE.format(error=error_msg)) from e
+            self.logger.error(
+                "Failed to create worktree",
+                branch_name=branch_name,
+                error=error_msg[:500],
+            )
+            raise RuntimeError(
+                ERROR_FAILED_TO_CREATE_WORKTREE.format(error=error_msg)
+            ) from e
         except subprocess.TimeoutExpired as e:
             self.logger.error("Timeout creating worktree", branch_name=branch_name)
             raise RuntimeError(f"Timeout creating worktree '{branch_name}'") from e
@@ -435,7 +470,9 @@ class WorktreeCreator:
         Raises:
             RuntimeError: If file write fails
         """
-        self.logger.debug("Rendering WT-TASK.md template", worktree_path=str(worktree_path))
+        self.logger.debug(
+            "Rendering WT-TASK.md template", worktree_path=str(worktree_path)
+        )
 
         # Generate content with full path context
         if isinstance(data, IssueData):
@@ -458,10 +495,16 @@ class WorktreeCreator:
 
         try:
             _ = task_file_path.write_text(content)
-            self.logger.info("WT-TASK.md written successfully", path=str(task_file_path))
+            self.logger.info(
+                "WT-TASK.md written successfully", path=str(task_file_path)
+            )
         except OSError as e:
-            self.logger.error("Failed to write WT-TASK.md", path=str(task_file_path), error=str(e))
-            raise RuntimeError(ERROR_FAILED_TO_WRITE_TASK_FILE.format(path=task_file_path)) from e
+            self.logger.error(
+                "Failed to write WT-TASK.md", path=str(task_file_path), error=str(e)
+            )
+            raise RuntimeError(
+                ERROR_FAILED_TO_WRITE_TASK_FILE.format(path=task_file_path)
+            ) from e
 
     def _open_shuvcode(self, worktree_path: Path) -> None:
         """Open shuvcode on worktree.
@@ -479,7 +522,9 @@ class WorktreeCreator:
 
         self.logger.debug("Opening shuvcode", worktree_path=str(worktree_path))
 
-        with contextlib.suppress(subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+        with contextlib.suppress(
+            subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired
+        ):
             _ = subprocess.run(
                 ["shuvcode", str(worktree_path)],
                 check=False,

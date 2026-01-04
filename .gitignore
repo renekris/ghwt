@@ -75,3 +75,7 @@ Thumbs.db
 # UV
 .uv-cache/
 uv.lock
+.worktrees/
+.ruff_cache/
+.coverage
+.coverage.*
