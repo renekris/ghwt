@@ -262,6 +262,7 @@ class WorktreeCreator:
 
         Returns:
             Branch name in format: issue-42-title or pr-123-title
+            Title limited to 3 words maximum
         """
         # Get prefix and number
         if isinstance(data, IssueData):
@@ -271,21 +272,18 @@ class WorktreeCreator:
             prefix = "pr"
             number = data.number
 
-        # Sanitize title for branch name
-        sanitized_title = self._sanitize_title(data.title)
+        # Strip bracketed prefixes like [Feature], [Bug], [Refactoring]
+        title_without_prefix = re.sub(r"\[.*?\]\s*", "", data.title).strip()
+
+        # Extract first 3 words from title
+        words = title_without_prefix.split()
+        first_three_words = words[:3]
+
+        # Sanitize and combine title
+        title_suffix = self._sanitize_title(" ".join(first_three_words))
 
         # Combine: prefix-number-title
-        branch_name = f"{prefix}-{number}-{sanitized_title}"
-
-        # Truncate if too long (Git branch limit ~255 chars)
-        if len(branch_name) > 200:
-            original_length = len(branch_name)
-            branch_name = branch_name[:200]
-            self.logger.debug(
-                "Branch name truncated",
-                original_length=original_length,
-                truncated_length=len(branch_name),
-            )
+        branch_name = f"{prefix}-{number}-{title_suffix}"
 
         return branch_name
 

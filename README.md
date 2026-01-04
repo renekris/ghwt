@@ -73,10 +73,10 @@ ghwt 42 --issue --dry-run
 
 ### Branch Naming Convention
 
-- Issues: `issue-{number}-{sanitized-title}`
-- PRs: `pr-{number}-{sanitized-title}`
+- Issues: `issue-{number}-{sanitized-title}` (3 words maximum)
+- PRs: `pr-{number}-{sanitized-title}` (3 words maximum)
 
-Example: `issue-42-fix-database-connection-error`
+Example: `issue-42-fix-database-connection`
 
 ### Branch Conflict Handling
 
