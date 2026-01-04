@@ -1,0 +1,71 @@
+[project]
+name = "ghwt"
+version = "0.1.0"
+description = "Autonomous worktree creation from GitHub issues/PRs"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.13"
+ dependencies = [
+    "click>=8.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "structlog>=24.0.0",
+]
+authors = [
+    {name = "Rene Kristofer Pohlak", email = "renekrispohlak@gmail.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Version Control :: Git",
+]
+keywords = ["git", "worktree", "github", "automation", "cli"]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=9.0.0",
+    "pytest-cov>=7.0.0",
+    "pytest-mock>=3.0.0",
+]
+
+[project.scripts]
+ghwt = "main:cli"
+
+[project.urls]
+Homepage = "https://github.com/priit2000/adduco"
+Repository = "https://github.com/priit2000/adduco"
+Issues = "https://github.com/priit2000/adduco/issues"
+
+ [tool.setuptools]
+py-modules = [
+    "main",
+    "models",
+    "github_fetcher",
+    "worktree_creator",
+    "template_renderer",
+    "logging_config",
+    "config",
+    ]
+
+[tool.setuptools.package-data]
+ghwt = ["*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py *_test.py"
+python_classes = "Test* *Tests"
+python_functions = "test_*"
+addopts = "-ra --strict-markers --strict-config --showlocals --tb=short --durations=10"
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+]
