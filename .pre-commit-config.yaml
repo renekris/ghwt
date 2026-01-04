@@ -1,0 +1,88 @@
+# Global exclusions (apply to ALL hooks)
+exclude: |
+  (?x)^(
+    build/|
+    dist/|
+    \.egg-info/|
+    __pycache__/|
+    \.pytest_cache/|
+    \.ruff_cache/|
+    \.mypy_cache/|
+    \.coverage|
+    htmlcov/|
+    \.venv/|
+    venv/|
+    \.worktrees/|
+    logs/|
+    .*\.db(-journal|-shm|-wal)?
+  )
+
+repos:
+  # RUFF - Fast Python linter and formatter
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.10
+    hooks:
+      # Linting with safe auto-fixes
+      - id: ruff
+        types_or: [python]
+        args: [--fix, --exit-non-zero-on-fix]
+
+      # Formatting (always)
+      - id: ruff-format
+        types_or: [python]
+        args: [--exit-non-zero-on-format]
+        require_serial: true
+
+  # PRE-COMMIT HOOKS (general)
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1000', '--enforce-all']
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      - id: fix-byte-order-marker
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-case-conflict
+      - id: mixed-line-ending
+
+  # SECURITY - Secret detection
+  - repo: https://github.com/trufflesecurity/trufflehog
+    rev: v3.92.4
+    hooks:
+      - id: trufflehog
+        name: TruffleHog (filesystem scan)
+        description: Detect secrets in staged files using filesystem scan
+        entry: bash -c 'uv run trufflehog filesystem $(git diff --name-only --cached) --fail'
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+
+  # SAST - Code security patterns
+  - repo: https://github.com/semgrep/pre-commit
+    rev: v1.146.0
+    hooks:
+      - id: semgrep
+        name: Semgrep SAST (ERROR-only)
+        args:
+          - '--config=p/python'
+          - '--config=p/fastapi'
+          - '--severity=ERROR'
+          - '--error'
+        files: \.py$
+        pass_filenames: true
+        stages: [pre-commit]
+
+  # LOCAL HOOKS - Tests (pre-push: slow checks)
+  - repo: local
+    hooks:
+      # Test suite
+      - id: backend-test
+        name: Test suite
+        entry: uv run pytest -x
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [pre-push]
