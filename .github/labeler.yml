@@ -1,0 +1,130 @@
+# Auto-label issues/PRs based on keywords and file paths
+
+# Title patterns (bracketed prefixes have 90%+ confidence)
+type:bug:
+  - bug
+  - fix
+  - error
+  - broken
+  - crash
+  - exception
+  - '\[bug\]'
+  - '\[fix\]'
+
+type:enhancement:
+  - feature
+  - enhancement
+  - add
+  - implement
+  - new
+  - '\[feature\]'
+  - '\[enhancement\]'
+  - '\[cli-\d+\]'
+  - '\[medium\]'
+
+type:refactor:
+  - refactor
+  - cleanup
+  - simplify
+  - optimize
+  - restructure
+  - '\[refactor\]'
+  - '\[cleanup\]'
+  - '\[optimize\]'
+
+type:documentation:
+  - docs
+  - readme
+  - guide
+  - tutorial
+  - documentation
+  - '\[docs?\]'
+
+type:design:
+  - design
+  - ui
+  - layout
+  - styling
+  - theme
+  - wireframe
+  - mockup
+
+area:ai:
+  - backend/interfaces/ai/**
+  - backend/services/ai/**
+  - prompts/**/*.yaml
+
+area:backend:
+  - backend/api/**
+  - backend/models/**
+  - backend/services/**
+  - backend/config/**
+
+area:frontend/ui:
+  - frontend/app/components/**
+  - frontend/app/layouts/**
+
+area:frontend/logic:
+  - frontend/app/composables/**
+  - frontend/app/stores/**
+  - frontend/app/features/**
+
+area:frontend/pages:
+  - frontend/app/pages/**
+
+area:data-pipeline:
+  - backend/interfaces/data/**
+  - backend/services/data/**
+  - scripts/debug/**
+  - raw/**
+
+area:infra:
+  - deployment/**
+  - .github/workflows/**
+  - docker-compose*.yml
+  - Dockerfile*
+
+area:testing:
+  - tests/**
+  - frontend/e2e/**
+  - frontend/tests/**
+
+area:performance:
+  - backend/**/*.py
+  - frontend/app/composables/performance*
+  - frontend/app/plugins/performance*
+  - frontend/nuxt.config.ts
+
+area:mobile:
+  - frontend/app/layouts/**/*.vue
+  - frontend/app/components/**/*mobile*.vue
+  - frontend/app/composables/useResponsive*
+  - frontend/app/plugins/device*
+
+priority:critical:
+  - production
+  - urgent
+  - blocking
+  - outage
+  - critical
+
+priority:high:
+  - mvp
+  - important
+  - priority
+  - asap
+
+priority:medium:
+  - improvement
+  - quality
+
+priority:low:
+  - nice to have
+  - enhancement
+  - optional
+
+good first issue:
+  - good first issue
+  - beginner
+  - starter
+  - help wanted

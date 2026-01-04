@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 📖 Documentation
+    url: https://github.com/code-yeongyu/adduco
+    about: Check documentation for existing information
+  - name: 💬 Discussions
+    url: https://github.com/code-yeongyu/adduco/discussions
+    about: Ask questions and discuss with community

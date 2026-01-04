@@ -1,0 +1,50 @@
+name: 📋 General Task
+description: Non-bug, non-feature work (docs, refactoring, maintenance)
+title: "[Task] "
+labels: ["needs:triage"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Task Description
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type
+      options:
+        - Documentation
+        - Refactoring
+        - Testing
+        - Code Quality
+        - Design
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - AI/Prompts
+        - Backend
+        - Frontend UI
+        - Frontend Logic
+        - Frontend Pages
+        - Data Pipeline
+        - Infrastructure
+        - Performance
+        - Mobile
+        - Testing
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance Criteria
+      placeholder: What defines "done" for this task?

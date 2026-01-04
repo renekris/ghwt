@@ -1,0 +1,83 @@
+name: 🐛 Bug Report
+description: Report a bug or unexpected behavior
+title: "[Bug] "
+labels: ["type:bug", "needs:triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug!
+
+        ## Before submitting
+        - [ ] I've searched existing issues
+        - [ ] I've read the documentation
+        - [ ] I can reproduce this bug consistently
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: Production / Development / Testing
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      placeholder: "1. Run...\n2. Click...\n3. See error"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      placeholder: What should have happened?
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs
+      render: shell
+      placeholder: Paste error messages or stack traces here
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected Area
+      options:
+        - AI/Prompts
+        - Backend
+        - Frontend UI
+        - Frontend Logic
+        - Frontend Pages
+        - Data Pipeline
+        - Infrastructure
+        - Performance
+        - Mobile
+        - Testing
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How does this impact your work?
+      options:
+        - Critical (blocks development or production)
+        - High (important for MVP)
+        - Medium (quality improvement)
+        - Low (nice to have)
+    validations:
+      required: true

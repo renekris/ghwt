@@ -1,0 +1,55 @@
+name: ✨ Feature Request
+description: Propose a new feature or enhancement
+title: "[Feature] "
+labels: ["type:enhancement", "needs:triage"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem will this solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches
+      description: Other solutions you considered?
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - AI/Prompts
+        - Backend
+        - Frontend UI
+        - Frontend Logic
+        - Frontend Pages
+        - Data Pipeline
+        - Infrastructure
+        - Performance
+        - Mobile
+        - Testing
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Estimated Effort
+      options:
+        - Quick (<1h)
+        - Short (1-4h)
+        - Medium (1-2d)
+        - Large (3d+)
