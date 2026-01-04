@@ -97,6 +97,71 @@ export WORKTREE_ROOT=/path/to/worktrees
 ghwt https://github.com/owner/repo/issues/42
 ```
 
+### Prompt Passing to Shuvcode
+
+By default, ghwt passes WT-TASK.md content to shuvcode as initial prompt.
+
+**Custom Prompt:**
+```bash
+ghwt 42 --issue --agent-prompt "Fix database connection error"
+```
+
+**Prompt Presets:**
+```bash
+ghwt 42 --issue --agent-preset ralph-loop
+ghwt 42 --issue --agent-preset standard-ootl
+ghwt 42 --issue --agent-preset minimal
+```
+
+**CI Mode (Non-Interactive):**
+```bash
+ghwt 42 --issue --ci
+```
+
+**Disable Prompt (Old Behavior):**
+```bash
+ghwt 42 --issue --no-prompt
+```
+
+**Environment Variables:**
+```bash
+export GHWT_AGENT_INIT_PROMPT="Custom default prompt"
+export GHWT_AGENT_INIT_PRESET="ralph-loop"
+export GHWT_CI_MODE=true
+```
+
+### CI/CD Integration
+
+**GitHub Actions:**
+```yaml
+- name: Create worktree and start agent
+  env:
+    GHWT_AGENT_INIT_PRESET: "ralph-loop"
+  run: |
+    ghwt ${{ github.event.pull_request.number }} --pr --ci
+```
+
+**GitLab CI:**
+```yaml
+variables:
+  GHWT_AGENT_INIT_PROMPT: "/ralph-loop Execute WT-TASK.md task"
+
+create_worktree:
+  script:
+    - ghwt $CI_MERGE_REQUEST_IID --pr --ci
+```
+
+**Note:** The `--ci` flag automatically sets `OPENCODE_PERMISSION='{"*":"allow"}'` to skip all permission prompts in CI environments. This enables fully non-interactive execution.
+
+### Priority Order
+
+Prompt resolution follows this priority (highest to lowest):
+1. `--agent-prompt` CLI flag (custom prompt override)
+2. `GHWT_AGENT_INIT_PROMPT` environment variable
+3. `--agent-preset` CLI flag or `GHWT_AGENT_INIT_PRESET` environment variable
+4. WT-TASK.md file content (default)
+5. No prompt (`--no-prompt` flag)
+
 ### Output
 
 The tool generates a `WT-TASK.md` file in the worktree directory with:

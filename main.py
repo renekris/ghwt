@@ -48,6 +48,28 @@ from worktree_creator import WorktreeCreator
     default=None,
     help="Root directory for worktrees (default: <git_repo>/.worktrees/)",
 )
+@click.option(
+    "--agent-prompt",
+    type=str,
+    default=None,
+    help="Custom prompt to pass to shuvcode (overrides preset and WT-TASK.md)",
+)
+@click.option(
+    "--agent-preset",
+    type=click.Choice(["ralph-loop", "standard-ootl", "minimal"]),
+    default=None,
+    help="Use predefined prompt preset for shuvcode",
+)
+@click.option(
+    "--no-prompt",
+    is_flag=True,
+    help="Skip prompt passing to shuvcode (current behavior)",
+)
+@click.option(
+    "--ci",
+    is_flag=True,
+    help="CI mode: non-interactive shuvcode execution with WT-TASK.md as prompt",
+)
 def cli(
     input: str,
     item_type: str | None,
@@ -55,6 +77,10 @@ def cli(
     verbose: bool,
     quiet: bool,
     worktree_root: Path | None,
+    agent_prompt: str | None,
+    agent_preset: str | None,
+    no_prompt: bool,
+    ci: bool,
 ) -> None:
     """Create worktree from GitHub issue or PR.
 
@@ -74,11 +100,25 @@ def cli(
         2. Create a worktree using workmux (skip with --dry-run)
         3. Generate WT-TASK.md with comprehensive autonomous agent instructions
         4. Auto-open shuvcode editor on worktree (skip with --dry-run)
+
+    Prompt passing:
+        --agent-prompt "Custom prompt": Override default prompt
+        --agent-preset ralph-loop: Use predefined preset
+        --ci: Non-interactive mode with WT-TASK.md as prompt
+        --no-prompt: Skip prompt (old behavior)
     """
+    # Handle mutually exclusive CI flags
+    if ci and no_prompt:
+        raise click.ClickException("Cannot use --ci and --no-prompt together")
+
     settings = WorktreeSettings(
         worktree_root=worktree_root,
         verbose=verbose,
         quiet=quiet,
+        agent_prompt=agent_prompt,
+        agent_prompt_preset=agent_preset,
+        no_prompt=no_prompt,
+        ci_mode=ci,
     )
 
     configure_logging(verbose=settings.verbose, quiet=settings.quiet)

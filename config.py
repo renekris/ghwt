@@ -2,10 +2,65 @@
 
 import os
 import subprocess
+from enum import Enum
 from pathlib import Path
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class PromptPreset(str, Enum):
+    """Prompt preset names for shuvcode agent initialization."""
+
+    RALPH_LOOP = "ralph-loop"
+    STANDARD_OOTL = "standard-ootl"
+    MINIMAL = "minimal"
+
+
+PROMPT_PRESETS = {
+    PromptPreset.RALPH_LOOP: """Follow Ralph's autonomous development loop for all implementation work:
+
+1. Read WT-TASK.md and consult @oracle immediately for assistance, reference WT-TASK.md, so oracle can gather critical research on the given task. Always use oracle on any issue you need more intelligence on during implementation.
+
+2. Implement feature following the task requirements in WT-TASK.md
+
+3. Create and update todo list to track all implementation steps
+
+4. Run tests and ensure all pass
+
+5. Verify code quality with linter checks
+
+6. Update documentation as needed
+
+7. Ask for final review from oracle before claiming completion
+""",
+    PromptPreset.STANDARD_OOTL: """Standard out-of-the-loop agent instructions:
+
+1. Read WT-TASK.md thoroughly to understand the task
+
+2. Implement the feature according to the requirements
+
+3. Write comprehensive tests before implementation (TDD)
+
+4. Ensure all tests pass
+
+5. Follow code quality standards and best practices
+
+6. Update documentation with changes made
+
+7. Verify the implementation meets all acceptance criteria
+""",
+    PromptPreset.MINIMAL: """Minimal task execution:
+
+1. Read WT-TASK.md to understand the task
+
+2. Implement the required changes
+
+3. Verify the implementation works correctly
+
+4. Run existing tests and ensure they pass
+""",
+}
 
 
 class WorktreeSettings(BaseSettings):
@@ -56,10 +111,50 @@ class WorktreeSettings(BaseSettings):
     verbose: bool = Field(default=False, description="Enable debug logging")
     quiet: bool = Field(default=False, description="Suppress info messages")
 
+    # Agent prompt configuration
+    agent_prompt: str | None = Field(
+        default=None,
+        description="Custom agent prompt (overrides preset and WT-TASK.md)",
+    )
+
+    agent_prompt_preset: PromptPreset | None = Field(
+        default=None,
+        description="Prompt preset to use (ralph-loop, standard-ootl, minimal)",
+    )
+
+    no_prompt: bool = Field(
+        default=False,
+        description="Skip prompt passing to shuvcode (current behavior)",
+    )
+
+    ci_mode: bool = Field(
+        default=False,
+        description="CI mode: non-interactive shuvcode execution",
+    )
+
     @model_validator(mode="after")
     def validate_logging_flags(self) -> "WorktreeSettings":
         if self.verbose and self.quiet:
-            raise ValueError("Cannot set both --verbose and --quiet flags simultaneously")
+            raise ValueError(
+                "Cannot set both --verbose and --quiet flags simultaneously"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def validate_prompt_settings(self) -> "WorktreeSettings":
+        """Ensure prompt options are mutually exclusive."""
+        prompt_flags = [
+            self.agent_prompt,
+            self.agent_prompt_preset,
+            self.no_prompt,
+        ]
+        active_flags = [f for f in prompt_flags if f]
+        if len(active_flags) > 1:
+            raise ValueError(
+                "Cannot use --agent-prompt, --agent-preset, and --no-prompt together"
+            )
+        if self.ci_mode and self.no_prompt:
+            raise ValueError("Cannot use --ci and --no-prompt together")
         return self
 
     @field_validator("worktree_root", mode="before")
@@ -123,8 +218,14 @@ class WorktreeSettings(BaseSettings):
             return git_root / ".worktrees"
         except subprocess.CalledProcessError as e:
             if e.returncode == 128:
-                raise RuntimeError("Not in a git repository. Run this command from within a git repository.") from None
-            stderr = e.stderr if isinstance(e.stderr, str) else e.stderr.decode("utf-8", errors="replace")
+                raise RuntimeError(
+                    "Not in a git repository. Run this command from within a git repository."
+                ) from None
+            stderr = (
+                e.stderr
+                if isinstance(e.stderr, str)
+                else e.stderr.decode("utf-8", errors="replace")
+            )
             raise RuntimeError(f"Git command failed: {stderr.strip()}") from None
         except FileNotFoundError:
             raise RuntimeError("Git is not installed") from None

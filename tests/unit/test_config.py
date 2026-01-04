@@ -65,7 +65,9 @@ class TestWorktreeSettings:
     def test_get_default_worktree_root_not_in_git_repo(self) -> None:
         """Test error when not in a git repository."""
         with patch("subprocess.run") as mock_run:
-            mock_run.side_effect = subprocess.CalledProcessError(returncode=128, cmd="git rev-parse --show-toplevel")
+            mock_run.side_effect = subprocess.CalledProcessError(
+                returncode=128, cmd="git rev-parse --show-toplevel"
+            )
 
             with pytest.raises(RuntimeError, match="Not in a git repository"):
                 WorktreeSettings.get_default_worktree_root()
@@ -81,7 +83,9 @@ class TestWorktreeSettings:
     def test_get_default_worktree_root_git_timeout(self) -> None:
         """Test error when git command times out."""
         with patch("subprocess.run") as mock_run:
-            mock_run.side_effect = subprocess.TimeoutExpired(cmd="git rev-parse --show-toplevel", timeout=5)
+            mock_run.side_effect = subprocess.TimeoutExpired(
+                cmd="git rev-parse --show-toplevel", timeout=5
+            )
 
             with pytest.raises(RuntimeError, match="Git command timed out"):
                 WorktreeSettings.get_default_worktree_root()
@@ -95,7 +99,9 @@ class TestWorktreeSettings:
         assert effective_root == custom_root
         assert effective_root.exists()
 
-    def test_get_effective_worktree_root_falls_back(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_get_effective_worktree_root_falls_back(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         """Test fallback to git repo default when worktree_root is None."""
         monkeypatch.delenv("GHWT_WORKTREE_ROOT", raising=False)
 
@@ -151,3 +157,135 @@ class TestWorktreeSettings:
         expected_path = Path(config_file).parent / "WT_TASK_TEMPLATE.md"
         assert settings.template_path == expected_path
         assert settings.template_path.exists()
+
+
+class TestPromptSettingsValidation:
+    """Test prompt-related settings validation."""
+
+    def test_default_prompt_settings(self) -> None:
+        """Test default values for prompt settings."""
+        settings = WorktreeSettings()
+
+        assert settings.agent_prompt is None
+        assert settings.agent_prompt_preset is None
+        assert settings.no_prompt is False
+        assert settings.ci_mode is False
+
+    def test_custom_prompt_only(self) -> None:
+        """Test custom prompt can be set alone."""
+        settings = WorktreeSettings(agent_prompt="Custom prompt")
+
+        assert settings.agent_prompt == "Custom prompt"
+        assert settings.agent_prompt_preset is None
+        assert settings.no_prompt is False
+
+    def test_preset_only(self) -> None:
+        """Test preset can be set alone."""
+        from config import PromptPreset
+
+        settings = WorktreeSettings(agent_prompt_preset=PromptPreset.RALPH_LOOP)
+
+        assert settings.agent_prompt is None
+        assert settings.agent_prompt_preset == PromptPreset.RALPH_LOOP
+        assert settings.no_prompt is False
+
+    def test_no_prompt_only(self) -> None:
+        """Test no-prompt can be set alone."""
+        settings = WorktreeSettings(no_prompt=True)
+
+        assert settings.no_prompt is True
+        assert settings.agent_prompt is None
+        assert settings.agent_prompt_preset is None
+        assert settings.ci_mode is False
+
+    def test_ci_mode_only(self) -> None:
+        """Test CI mode can be set alone."""
+        settings = WorktreeSettings(ci_mode=True)
+
+        assert settings.ci_mode is True
+        assert settings.no_prompt is False
+        assert settings.agent_prompt is None
+        assert settings.agent_prompt_preset is None
+
+    def test_mutually_exclusive_prompt_flags(self) -> None:
+        """Test custom prompt and preset cannot be set together."""
+        from config import PromptPreset
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            WorktreeSettings(
+                agent_prompt="Custom", agent_prompt_preset=PromptPreset.RALPH_LOOP
+            )
+
+        errors = exc_info.value.errors()
+        assert len(errors) > 0
+        assert any(
+            "Cannot use --agent-prompt, --agent-preset, and --no-prompt together"
+            in str(error["msg"])
+            for error in errors
+        )
+
+    def test_custom_prompt_and_no_prompt_conflict(self) -> None:
+        """Test custom prompt and no-prompt cannot be set together."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            WorktreeSettings(agent_prompt="Custom", no_prompt=True)
+
+        errors = exc_info.value.errors()
+        assert len(errors) > 0
+        assert any(
+            "Cannot use --agent-prompt, --agent-preset, and --no-prompt together"
+            in str(error["msg"])
+            for error in errors
+        )
+
+    def test_preset_and_no_prompt_conflict(self) -> None:
+        """Test preset and no-prompt cannot be set together."""
+        from config import PromptPreset
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            WorktreeSettings(agent_prompt_preset=PromptPreset.MINIMAL, no_prompt=True)
+
+        errors = exc_info.value.errors()
+        assert len(errors) > 0
+        assert any(
+            "Cannot use --agent-prompt, --agent-preset, and --no-prompt together"
+            in str(error["msg"])
+            for error in errors
+        )
+
+    def test_ci_and_no_prompt_conflict(self) -> None:
+        """Test CI mode and no-prompt cannot be set together."""
+        from pydantic import ValidationError
+
+        with pytest.raises(ValidationError) as exc_info:
+            WorktreeSettings(ci_mode=True, no_prompt=True)
+
+        errors = exc_info.value.errors()
+        assert len(errors) > 0
+        assert any(
+            "Cannot use --ci and --no-prompt together" in str(error["msg"])
+            for error in errors
+        )
+
+    def test_ci_and_custom_prompt_allowed(self) -> None:
+        """Test CI mode can coexist with custom prompt."""
+        settings = WorktreeSettings(ci_mode=True, agent_prompt="Custom")
+
+        assert settings.ci_mode is True
+        assert settings.agent_prompt == "Custom"
+        assert settings.agent_prompt_preset is None
+
+    def test_ci_and_preset_allowed(self) -> None:
+        """Test CI mode can coexist with preset."""
+        from config import PromptPreset
+
+        settings = WorktreeSettings(
+            ci_mode=True, agent_prompt_preset=PromptPreset.STANDARD_OOTL
+        )
+
+        assert settings.ci_mode is True
+        assert settings.agent_prompt_preset == PromptPreset.STANDARD_OOTL
+        assert settings.agent_prompt is None
